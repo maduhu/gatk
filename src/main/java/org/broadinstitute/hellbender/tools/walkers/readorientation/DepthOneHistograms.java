@@ -34,7 +34,7 @@ public class DepthOneHistograms {
                 }
 
                 for (ReadOrientation artifactType : ReadOrientation.values()) {
-                    map.get(context).put(new ImmutablePair(altAllele, artifactType),
+                    map.get(context).put(new ImmutablePair<>(altAllele, artifactType),
                             F1R2FilterUtils.createAltHistogram(context, altAllele, artifactType, maxDepth));
                 }
             }
@@ -42,7 +42,7 @@ public class DepthOneHistograms {
     }
 
     public Histogram<Integer> get(final String referenceContext, final Nucleotide altAllele, final ReadOrientation orientation) {
-        final Pair<Nucleotide, ReadOrientation> key = new ImmutablePair(altAllele, orientation);
+        final Pair<Nucleotide, ReadOrientation> key = new ImmutablePair<>(altAllele, orientation);
         return map.get(referenceContext).get(key);
     }
 

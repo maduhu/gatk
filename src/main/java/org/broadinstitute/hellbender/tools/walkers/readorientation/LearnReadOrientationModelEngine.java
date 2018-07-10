@@ -79,25 +79,27 @@ public class LearnReadOrientationModelEngine {
     private final static double REF_PSEUDOCOUNT = 9.0;
 
     // for home ref sites assume Q35, but maintaining some width
-    private final static double PSEUDO_COUNT_OF_HOM_LIKELY = 10000.0;
+    private final static double PSEUDOCOUNT_OF_HOM_LIKELY = 10000.0;
 
-    private final static double PSEUDO_COUNT_OF_HOM_UNLIKELY = 3.0;
+    private final static double PSEUDOCOUNT_OF_HOM_UNLIKELY = 3.0;
 
-    private final static double BALANCED_PSEUDOCOUNT = 5.0;
+    // To account for potential copy number variation we use a relatively broad allele fraction distribution.
+    // In the future we will use the segmentation info as done in the germline filter and the contamination model
+    private final static double BALANCED_HET_PSEUDOCOUNT = 5.0;
+
+    // Give a sharper beta prior than the allele fraction
+    private final static double BALANCED_F1R2_PRIOR = 10;
 
     // These variables define the distribution of allele fraction in a somatic variant. It should be learned from
     // the data in the future. In the meantime, one should tweak this by hand when e.g. applying the read orientation
     // filter on low allele fraction samples such as the blood biopsy
-    private final static double PSEUDO_COUNT_OF_SOMATIC_ALT = 2.0;
+    private final static double PSEUDOCOUNT_OF_SOMATIC_ALT = 2.0;
 
-    private final static double PSEUDO_COUNT_OF_SOMATIC_REF = 5.0;
+    private final static double PSEUDOCOUNT_OF_SOMATIC_REF = 5.0;
 
-    private final static double PSEUDO_COUNT_OF_LIKELY_OUTCOME = 100.0;
+    private final static double PSEUDOCOUNT_OF_LIKELY_OUTCOME = 100.0;
 
-    private final static double PSEUDO_COUNT_OF_RARE_OUTCOME = 1.0;
-
-    private final static double BALANCED_PRIOR = 10;
-
+    private final static double PSEUDOCOUNT_OF_RARE_OUTCOME = 1.0;
 
     /**
      * Contract: the reference contexts must be combined with its reverse complements prior to instantiating this class
@@ -305,10 +307,10 @@ public class LearnReadOrientationModelEngine {
         ArtifactState.getF1R2ArtifactStates().forEach(s -> alleleFractionPseudoCounts.put(s, new BetaDistributionShape(ALT_PSEUDOCOUNT, REF_PSEUDOCOUNT)));
         ArtifactState.getF2R1ArtifactStates().forEach(s -> alleleFractionPseudoCounts.put(s, new BetaDistributionShape(ALT_PSEUDOCOUNT, REF_PSEUDOCOUNT)));
 
-        alleleFractionPseudoCounts.put(ArtifactState.HOM_REF, new BetaDistributionShape(PSEUDO_COUNT_OF_HOM_UNLIKELY, PSEUDO_COUNT_OF_HOM_LIKELY));
-        alleleFractionPseudoCounts.put(ArtifactState.GERMLINE_HET, new BetaDistributionShape(BALANCED_PSEUDOCOUNT, BALANCED_PSEUDOCOUNT));
-        alleleFractionPseudoCounts.put(ArtifactState.SOMATIC_HET, new BetaDistributionShape(PSEUDO_COUNT_OF_SOMATIC_ALT, PSEUDO_COUNT_OF_SOMATIC_REF));
-        alleleFractionPseudoCounts.put(ArtifactState.HOM_VAR, new BetaDistributionShape(PSEUDO_COUNT_OF_HOM_LIKELY, PSEUDO_COUNT_OF_HOM_UNLIKELY));
+        alleleFractionPseudoCounts.put(ArtifactState.HOM_REF, new BetaDistributionShape(PSEUDOCOUNT_OF_HOM_UNLIKELY, PSEUDOCOUNT_OF_HOM_LIKELY));
+        alleleFractionPseudoCounts.put(ArtifactState.GERMLINE_HET, new BetaDistributionShape(BALANCED_HET_PSEUDOCOUNT, BALANCED_HET_PSEUDOCOUNT));
+        alleleFractionPseudoCounts.put(ArtifactState.SOMATIC_HET, new BetaDistributionShape(PSEUDOCOUNT_OF_SOMATIC_ALT, PSEUDOCOUNT_OF_SOMATIC_REF));
+        alleleFractionPseudoCounts.put(ArtifactState.HOM_VAR, new BetaDistributionShape(PSEUDOCOUNT_OF_HOM_LIKELY, PSEUDOCOUNT_OF_HOM_UNLIKELY));
 
         return alleleFractionPseudoCounts;
     }
@@ -316,9 +318,9 @@ public class LearnReadOrientationModelEngine {
     private static Map<ArtifactState, BetaDistributionShape> getPseudoCountsForAltF1R2Fraction(){
         final Map<ArtifactState, BetaDistributionShape> altF1R2FractionPseudoCounts = new HashMap<>(ArtifactState.values().length);
 
-        ArtifactState.getF1R2ArtifactStates().forEach(z -> altF1R2FractionPseudoCounts.put(z, new BetaDistributionShape(PSEUDO_COUNT_OF_LIKELY_OUTCOME, PSEUDO_COUNT_OF_RARE_OUTCOME)));
-        ArtifactState.getF2R1ArtifactStates().forEach(z -> altF1R2FractionPseudoCounts.put(z, new BetaDistributionShape(PSEUDO_COUNT_OF_RARE_OUTCOME, PSEUDO_COUNT_OF_LIKELY_OUTCOME)));
-        ArtifactState.getNonArtifactStates().forEach(z -> altF1R2FractionPseudoCounts.put(z, new BetaDistributionShape(BALANCED_PRIOR, BALANCED_PRIOR)));
+        ArtifactState.getF1R2ArtifactStates().forEach(z -> altF1R2FractionPseudoCounts.put(z, new BetaDistributionShape(PSEUDOCOUNT_OF_LIKELY_OUTCOME, PSEUDOCOUNT_OF_RARE_OUTCOME)));
+        ArtifactState.getF2R1ArtifactStates().forEach(z -> altF1R2FractionPseudoCounts.put(z, new BetaDistributionShape(PSEUDOCOUNT_OF_RARE_OUTCOME, PSEUDOCOUNT_OF_LIKELY_OUTCOME)));
+        ArtifactState.getNonArtifactStates().forEach(z -> altF1R2FractionPseudoCounts.put(z, new BetaDistributionShape(BALANCED_F1R2_PRIOR, BALANCED_F1R2_PRIOR)));
 
         return altF1R2FractionPseudoCounts;
     }

@@ -27,7 +27,7 @@ public class M2FiltersArgumentCollection extends AssemblyBasedCallerArgumentColl
     public static final String MAX_CONTAMINATION_PROBABILITY_LONG_NAME = "max-contamination-probability";
     public static final String UNIQUE_ALT_READ_COUNT_LONG_NAME = "unique-alt-read-count";
     public static final String TUMOR_SEGMENTATION_LONG_NAME = "tumor-segmentation";
-    public static final String ORIENTATION_BIAS_FDR_LONG_NAME = "orientation-bias-fpr"; // FDR = false discovery rate
+    public static final String ORIENTATION_BIAS_FDR_LONG_NAME = "orientation-bias-fdr"; // FDR = false discovery rate
 
     public static final String FILTERING_STATS_LONG_NAME = "stats";
 
