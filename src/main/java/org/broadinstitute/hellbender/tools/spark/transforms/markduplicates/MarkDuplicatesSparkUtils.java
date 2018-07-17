@@ -39,7 +39,7 @@ public class MarkDuplicatesSparkUtils {
     // This comparator represents the tiebreaking for PairedEnds duplicate marking.
     // We compare first on score, followed by unclipped start position (which is reversed here because of the expected ordering)
     private static final Comparator<TransientFieldPhysicalLocation> PAIRED_ENDS_SCORE_COMPARATOR = Comparator.comparing(TransientFieldPhysicalLocation::getScore)
-            .thenComparing(PairedEndsCoordinateComparator.INSTANCE);
+            .thenComparing(PairedEndsCoordinateComparator.INSTANCE.reversed());
 
     /**
      * Wrapper object used for storing an object and some type of index information.
@@ -504,10 +504,7 @@ public class MarkDuplicatesSparkUtils {
 
         @Override
         public int compare( TransientFieldPhysicalLocation first, TransientFieldPhysicalLocation second ) {
-            int result = Integer.compare(first.getFirstStartPosition(), second.getFirstStartPosition());
-            if ( result != 0 ) {
-                return result;
-            }
+            int result = 0;
 
             //This is done to mimic SAMRecordCoordinateComparator's behavior
             if (first.isRead1ReverseStrand() != second.isRead1ReverseStrand()) {

@@ -49,10 +49,6 @@ public final class EmptyFragment extends PairedEnds {
         return key;
     }
     @Override
-    public int getFirstStartPosition() {
-        throw new UnsupportedOperationException("Empty fragments do not support requests for positional information");
-    }
-    @Override
     public boolean isRead1ReverseStrand() {
         return R1R;
     }

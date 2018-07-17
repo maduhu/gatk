@@ -25,7 +25,6 @@ import java.util.Map;
 public final class Pair extends TransientFieldPhysicalLocation {
     protected transient ReadsKey key;
 
-    private final int firstStartPosition;
     private final boolean isRead1ReverseStrand;
 
     private final boolean isRead2ReverseStrand;
@@ -57,7 +56,6 @@ public final class Pair extends TransientFieldPhysicalLocation {
             first = read2;
             second = read1;
         }
-        firstStartPosition = first.getAssignedStart();
 
         // if the two read ends are in the same position, pointing in opposite directions,
         // the orientation is undefined and the procedure above
@@ -95,7 +93,6 @@ public final class Pair extends TransientFieldPhysicalLocation {
 
         score = input.readShort();
 
-        firstStartPosition = input.readInt();
         isRead1ReverseStrand = input.readBoolean();
 
         isRead2ReverseStrand = input.readBoolean();
@@ -110,7 +107,6 @@ public final class Pair extends TransientFieldPhysicalLocation {
 
         output.writeShort(score);
 
-        output.writeInt(firstStartPosition);
         output.writeBoolean(isRead1ReverseStrand);
 
         output.writeBoolean(isRead2ReverseStrand);
@@ -132,17 +128,14 @@ public final class Pair extends TransientFieldPhysicalLocation {
     public short getScore() {
         return score;
     }
-    @Override
-    public int getFirstStartPosition() {
-        return firstStartPosition;
-    }
+
     @Override
     public boolean isRead1ReverseStrand() {
         return isRead1ReverseStrand;
     }
     @Override
     public String toString() {
-        return name + " " + firstStartPosition + " score:" + score;
+        return name + " score:" + score;
     }
 
     /**
