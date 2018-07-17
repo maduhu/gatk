@@ -39,7 +39,7 @@ public class MarkDuplicatesSparkUtils {
     // This comparator represents the tiebreaking for PairedEnds duplicate marking.
     // We compare first on score, followed by unclipped start position (which is reversed here because of the expected ordering)
     private static final Comparator<TransientFieldPhysicalLocation> PAIRED_ENDS_SCORE_COMPARATOR = Comparator.comparing(TransientFieldPhysicalLocation::getScore)
-            .thenComparing(PairedEndsCoordinateComparator.INSTANCE.reversed());
+            .thenComparing(PairedEndsCoordinateComparator.INSTANCE);
 
     /**
      * Wrapper object used for storing an object and some type of index information.
@@ -374,6 +374,8 @@ public class MarkDuplicatesSparkUtils {
                 .peek(pair -> finder.addLocationInformation(pair.getName(), pair))
                 .max(PAIRED_ENDS_SCORE_COMPARATOR)
                 .orElseThrow(() -> new GATKException.ShouldNeverReachHereException("There was no best pair because the stream was empty, but it shouldn't have been empty."));
+
+        pairs.stream().filter(r -> (r != bestPair) && r.getScore() == bestPair.getScore()).forEach(r -> System.out.println(String.format("Found a score collision, max was %s but had same score as %s", bestPair.toString(), r.toString())));
 
         // Split by orientation and count duplicates in each group separately.
         final Map<Byte, List<Pair>> groupByOrientation = pairs.stream()
