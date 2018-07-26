@@ -85,15 +85,11 @@ workflow Mutect2 {
     File? variants_for_contamination_index
     File? realignment_index_bundle
     String? realignment_extra_args
-<<<<<<< HEAD
-    Boolean? run_orientation_bias_filter
-=======
     Boolean? run_old_orientation_bias_filter
     Boolean run_old_ob_filter = select_first([run_old_orientation_bias_filter, false])
     Boolean? run_new_orientation_bias_filter
     Boolean run_new_ob_filter = select_first([run_new_orientation_bias_filter, false])
     File? new_ob_filter_training_intervals
->>>>>>> Review edits
     Array[String]? artifact_modes
     Boolean run_ob_filter = select_first([run_orientation_bias_filter, true]) && (length(select_first([artifact_modes, ["G/T", "C/T"]])) > 0)
     File? tumor_sequencing_artifact_metrics
@@ -753,6 +749,7 @@ task CollectF1R2Counts {
     File? intervals
 
     # runtime
+    Int? max_retries
     String gatk_docker
     Int? mem
     Int? preemptible_attempts
@@ -782,6 +779,7 @@ task CollectF1R2Counts {
         memory: machine_mem + " MB"
         disks: "local-disk " + select_first([disk_space, 100]) + if use_ssd then " SSD" else " HDD"
         preemptible: select_first([preemptible_attempts, 10])
+        maxRetries: select_first([max_retries, 3])
         cpu: select_first([cpu, 1])
     }
 
@@ -802,6 +800,7 @@ task LearnReadOrientationModel {
     File? intervals
 
     # runtime
+    Int? max_retries
     String gatk_docker
     Int? mem
     Int? preemptible_attempts
@@ -832,6 +831,7 @@ task LearnReadOrientationModel {
         memory: machine_mem + " MB"
         disks: "local-disk " + select_first([disk_space, 100]) + if use_ssd then " SSD" else " HDD"
         preemptible: select_first([preemptible_attempts, 10])
+        maxRetries: select_first([max_retries, 3])
         cpu: select_first([cpu, 1])
     }
 
