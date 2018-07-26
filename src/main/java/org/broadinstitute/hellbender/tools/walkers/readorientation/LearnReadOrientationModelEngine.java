@@ -73,12 +73,13 @@ public class LearnReadOrientationModelEngine {
 
     private int maxDepth;
 
-    // Fixed hyperparameters for betabinomials
+    /** Fixed hyperparameters for betabinomials ***/
+    //
     private final static double ALT_PSEUDOCOUNT = 1.0;
 
     private final static double REF_PSEUDOCOUNT = 9.0;
 
-    // for home ref sites assume Q35, but maintaining some width
+    // For home ref sites assume Q35
     private final static double PSEUDOCOUNT_OF_HOM_LIKELY = 10000.0;
 
     private final static double PSEUDOCOUNT_OF_HOM_UNLIKELY = 3.0;
@@ -100,6 +101,7 @@ public class LearnReadOrientationModelEngine {
     private final static double PSEUDOCOUNT_OF_LIKELY_OUTCOME = 100.0;
 
     private final static double PSEUDOCOUNT_OF_RARE_OUTCOME = 1.0;
+    /*** END hyperparameters ***/
 
     /**
      * Contract: the reference contexts must be combined with its reverse complements prior to instantiating this class

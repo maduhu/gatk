@@ -104,7 +104,7 @@ public class ReadOrientationArtifact extends GenotypeAnnotation implements NonSt
                 continue;
             }
 
-            // Throw away bases that is below the desired minimum quality
+            // Throw away bases that are below the desired minimum quality
             final OptionalDouble result = BaseQualityRankSumTest.getReadBaseQuality(read, vc.getStart());
             final OptionalInt baseQuality = result.isPresent() ? OptionalInt.of((int) FastMath.round(result.getAsDouble())) : OptionalInt.empty();
             if (! baseQuality.isPresent() || baseQuality.getAsInt() < minimumBaseQuality){

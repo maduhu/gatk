@@ -1,6 +1,7 @@
 package org.broadinstitute.hellbender.tools.walkers.readorientation;
 
 import htsjdk.samtools.util.SequenceUtil;
+import org.broadinstitute.hellbender.exceptions.UserException;
 import org.broadinstitute.hellbender.utils.Utils;
 
 import java.io.File;
@@ -53,12 +54,14 @@ public class ArtifactPriorCollection {
 
         /**
          * We iterate through the canonical kmers instead of all reference contexts because otherwise we would
-         * visit each reference context twice and get an error the second time, as updating artifact prior that already
+         * visit each reference context twice and get an error the second time, as updating an artifact prior that already
          * exists in the container class is prohibited
          */
         for (final String refContext : F1R2FilterConstants.CANONICAL_KMERS){
             final Optional<ArtifactPrior> ap = priors.stream().filter(a -> a.getReferenceContext().equals(refContext)).findAny();
-            Utils.validate(ap.isPresent(), "ArtifactPrior object isn't present for reference context " + refContext + "in file " + input);
+            if (!ap.isPresent()){
+                throw new UserException.BadInput( "ArtifactPrior object isn't present for reference context " + refContext + "in file " + input);
+            }
             artifactPriorCollection.set(ap.get());
         }
         return artifactPriorCollection;

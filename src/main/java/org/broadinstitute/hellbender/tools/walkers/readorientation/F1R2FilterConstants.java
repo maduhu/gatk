@@ -14,12 +14,12 @@ import java.util.stream.IntStream;
  */
 public class F1R2FilterConstants {
     // Padding on each side
-    public static final int REF_CONTEXT_PADDING = 1;
+    public static final int REF_CONTEXT_PADDING = 1; // This sets the k-mer size to 3 by default
     public static final int NUM_STATES = ArtifactState.values().length;
     static final int MIDDLE_INDEX = REF_CONTEXT_PADDING;
-    static final int REFERENCE_CONTEXT_SIZE = 2 * REF_CONTEXT_PADDING + 1; // aka 3
+    static final int REFERENCE_CONTEXT_SIZE = 2 * REF_CONTEXT_PADDING + 1;
 
-    // the list of all possible kmers, where k = REFERENCE_CONTEXT_SIZE
+    // The list of all possible k-mers, where k = REFERENCE_CONTEXT_SIZE
     public static final List<String> ALL_KMERS = SequenceUtil.generateAllKmers(REFERENCE_CONTEXT_SIZE).stream()
             .map(String::new).collect(Collectors.toList());
     public static final int NUM_KMERS = ALL_KMERS.size();
