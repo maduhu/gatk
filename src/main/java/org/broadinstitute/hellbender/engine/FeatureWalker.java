@@ -7,7 +7,7 @@ import org.broadinstitute.hellbender.exceptions.UserException;
 import org.broadinstitute.hellbender.utils.SimpleInterval;
 import org.broadinstitute.hellbender.utils.Utils;
 
-import java.io.File;
+import java.nio.file.Path;
 
 /**
  * A FeatureWalker is a tool that processes a {@link Feature} at a time from a source of Features, with
@@ -22,10 +22,16 @@ import java.io.File;
  */
 public abstract class FeatureWalker<F extends Feature> extends GATKTool {
 
-    private FeatureDataSource<F> drivingFeatures;
+    private static final String DEFAULT_DRIVING_FEATURE_NAME = "drivingFeatureFile";
+
+    protected FeatureDataSource<F> drivingFeatures;
+
+    protected ReadsDataSource getReads() { return reads; }
+
+    protected ReferenceDataSource getReference() { return reference; }
 
     @Override
-    public boolean requiresFeatures(){
+    public final boolean requiresFeatures(){
         return true;
     }
     
@@ -55,12 +61,14 @@ public abstract class FeatureWalker<F extends Feature> extends GATKTool {
 
     @SuppressWarnings("unchecked")
     private void initializeDrivingFeatures() {
-        final File drivingFile = getDrivingFeatureFile();
-        final FeatureCodec<? extends Feature, ?> codec = FeatureManager.getCodecForFile(drivingFile);
+        final Path drivingFile = getDrivingFeatureFile();
+        final FeatureCodec<? extends Feature, ?> codec = FeatureManager.getCodecForFile(drivingFile, null);
         if (isAcceptableFeatureType(codec.getFeatureType())) {
-            drivingFeatures = new FeatureDataSource<>(new FeatureInput<>(drivingFile.getAbsolutePath()), FeatureDataSource.DEFAULT_QUERY_LOOKAHEAD_BASES, null, cloudPrefetchBuffer, cloudIndexPrefetchBuffer, referenceArguments.getReferencePath());
+            drivingFeatures = new FeatureDataSource<>(new FeatureInput<>(drivingFile.toAbsolutePath().toString()),
+                    FeatureDataSource.DEFAULT_QUERY_LOOKAHEAD_BASES, null, cloudPrefetchBuffer, cloudIndexPrefetchBuffer,
+                    referenceArguments.getReferencePath());
 
-            final FeatureInput<F> drivingFeaturesInput = new FeatureInput<>(drivingFile.getAbsolutePath(), "drivingFeatureFile");
+            final FeatureInput<F> drivingFeaturesInput = new FeatureInput<>(drivingFile.toAbsolutePath().toString(), getDrivingFeatureName());
             features.addToFeatureSources(0, drivingFeaturesInput, codec.getFeatureType(), cloudPrefetchBuffer, cloudIndexPrefetchBuffer,
                                          referenceArguments.getReferencePath());
         } else {
@@ -86,7 +94,7 @@ public abstract class FeatureWalker<F extends Feature> extends GATKTool {
                     apply(feature,
                             new ReadsContext(reads, featureInterval, readFilter),
                             new ReferenceContext(reference, featureInterval),
-                            new FeatureContext(features, featureInterval));
+                            getFeatureContext(featureInterval));
                     progressMeter.update(feature);
                 });
     }
@@ -130,5 +138,13 @@ public abstract class FeatureWalker<F extends Feature> extends GATKTool {
      *
      * @return never {@code null}.
      */
-    public abstract File getDrivingFeatureFile();
+    public abstract Path getDrivingFeatureFile();
+
+    protected String getDrivingFeatureName() {
+        return DEFAULT_DRIVING_FEATURE_NAME;
+    }
+
+    protected FeatureContext getFeatureContext(final SimpleInterval editedFeatureInterval) {
+        return new FeatureContext(features, editedFeatureInterval);
+    }
 }

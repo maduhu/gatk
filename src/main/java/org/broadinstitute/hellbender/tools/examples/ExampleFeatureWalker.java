@@ -9,11 +9,13 @@ import org.broadinstitute.hellbender.cmdline.StandardArgumentDefinitions;
 import org.broadinstitute.hellbender.cmdline.programgroups.ExampleProgramGroup;
 import org.broadinstitute.hellbender.engine.*;
 import org.broadinstitute.hellbender.exceptions.UserException;
+import org.broadinstitute.hellbender.utils.io.IOUtils;
 import org.broadinstitute.hellbender.utils.read.GATKRead;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
+import java.nio.file.Path;
 
 /**
  * Example/toy program that shows how to implement the FeatureWalker interface. Prints supplied features
@@ -36,7 +38,7 @@ public final class ExampleFeatureWalker extends FeatureWalker<BEDFeature> {
     private PrintStream outputStream = null;
 
     @Argument(shortName = "F", fullName = "feature_file", doc = "Feature file (eg., VCF or BED file)")
-    public File featuresFile;
+    public String featuresFile;
 
     @Override
     public void onTraversalStart() {
@@ -54,8 +56,8 @@ public final class ExampleFeatureWalker extends FeatureWalker<BEDFeature> {
     }
 
     @Override
-    public File getDrivingFeatureFile() {
-        return featuresFile;
+    public Path getDrivingFeatureFile() {
+        return IOUtils.getPath(featuresFile);
     }
 
     @Override
