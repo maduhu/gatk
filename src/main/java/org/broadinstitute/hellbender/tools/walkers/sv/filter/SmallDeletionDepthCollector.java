@@ -1,24 +1,30 @@
 package org.broadinstitute.hellbender.tools.walkers.sv.filter;
 
 import htsjdk.samtools.SAMSequenceDictionary;
+import htsjdk.samtools.util.BufferedLineReader;
 import htsjdk.samtools.util.Locatable;
 import htsjdk.tribble.bed.SimpleBEDFeature;
+import org.apache.logging.log4j.Logger;
+import org.apache.spark.broadcast.Broadcast;
 import org.broadinstitute.hellbender.engine.FeatureContext;
 import org.broadinstitute.hellbender.engine.ReadsContext;
 import org.broadinstitute.hellbender.engine.ReferenceContext;
 import org.broadinstitute.hellbender.engine.filters.ReadFilter;
 import org.broadinstitute.hellbender.engine.filters.ReadFilterLibrary;
 import org.broadinstitute.hellbender.exceptions.GATKException;
+import org.broadinstitute.hellbender.exceptions.UserException;
 import org.broadinstitute.hellbender.tools.spark.sv.utils.SVInterval;
+import org.broadinstitute.hellbender.tools.spark.sv.utils.SVIntervalTree;
 import org.broadinstitute.hellbender.utils.SimpleInterval;
 import org.broadinstitute.hellbender.utils.gcs.BucketUtils;
 import org.broadinstitute.hellbender.utils.read.GATKRead;
+import scala.Tuple2;
+import scala.Tuple3;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class SmallDeletionDepthCollector {
 
@@ -91,4 +97,68 @@ public class SmallDeletionDepthCollector {
         }
         return annotatedIntervalTrio;
     }
+
+    // for spark =======================================================================================================
+
+    /**
+     * Given interval of interest, generate left and right flanks of the same size of the interval.
+     */
+    public static SVIntervalTree<Tuple3<NamedCStyleInterval, NamedCStyleInterval, NamedCStyleInterval>>
+    makeFlankingTree(final String inputBedFile, final SAMSequenceDictionary sequenceDictionary, final Logger logger) {
+
+        final SVIntervalTree<Tuple3<NamedCStyleInterval, NamedCStyleInterval, NamedCStyleInterval>> flankedTree = new SVIntervalTree<>();
+
+        final BufferedLineReader reader = new BufferedLineReader(BucketUtils.openFile(inputBedFile));
+        String line;
+        int linenumber = 0;
+        while ( (line = reader.readLine()) != null) {
+            ++linenumber;
+            final String[] bedLine = line.split("\t");
+            if (bedLine.length < 3)
+                throw new UserException("Line " + linenumber + " ill-formed: " + line);
+            final SVInterval svInterval = new SVInterval(sequenceDictionary.getSequenceIndex(bedLine[0]),
+                    Integer.valueOf(bedLine[1]), Integer.valueOf(bedLine[2]));
+            final StringBuilder builder = new StringBuilder();
+            for (int i = 3; i < bedLine.length; ++i) {
+                builder.append(bedLine[i]);
+            }
+            String name = builder.toString();
+            final NamedCStyleInterval middle = new NamedCStyleInterval(svInterval, name);
+            int chrLength = sequenceDictionary.getSequence(middle.getContig()).getSequenceLength();
+            final NamedCStyleInterval leftFlank = new NamedCStyleInterval(middle.getContig(),
+                    Math.max(0, middle.getStart() - middle.getLength()),
+                    middle.getStart(),
+                    name);
+            final NamedCStyleInterval rightFlank = new NamedCStyleInterval(middle.getContig(),
+                    middle.getEnd(),
+                    Math.min(middle.getEnd() + middle.getLength(), chrLength),
+                    name);
+            flankedTree.put(new SVInterval(middle.getContig(), leftFlank.getStart(), rightFlank.getEnd()),
+                    new Tuple3<>(leftFlank, middle, rightFlank));
+
+        }
+        logger.info("processing " + linenumber + " intervals");
+        return flankedTree;
+    }
+
+    // sometimes the flanked intervals intersect so a read could generate multiple tree nodes, i.e. there's overlap between the padded intervals
+    public static Iterator<Tuple2<SVInterval, AnnotatedIntervalTrio>>
+    collectSummaries(final GATKRead gatkRead, final Broadcast<SAMSequenceDictionary> sequenceDictionaryBroadcast,
+                     final Broadcast<SVIntervalTree<Tuple3<NamedCStyleInterval, NamedCStyleInterval, NamedCStyleInterval>>> treeBroadcast) {
+
+        final SVInterval readInterval = makeCStyleInterval(gatkRead, sequenceDictionaryBroadcast.getValue()); // this uses the read's clipped start
+
+        final Iterator<SVIntervalTree.Entry<Tuple3<NamedCStyleInterval, NamedCStyleInterval, NamedCStyleInterval>>> overlappersIterator =
+                treeBroadcast.getValue().overlappers(readInterval);
+        if (overlappersIterator.hasNext()) {
+            final List<Tuple2<SVInterval, AnnotatedIntervalTrio>> result = new ArrayList<>(3); // 3 is a guess
+            while (overlappersIterator.hasNext()) {
+                final SVIntervalTree.Entry<Tuple3<NamedCStyleInterval, NamedCStyleInterval, NamedCStyleInterval>> entry = overlappersIterator.next();
+                result.add(new Tuple2<>(entry.getInterval(), new AnnotatedIntervalTrio(gatkRead, readInterval, entry.getValue())));
+            }
+            return result.iterator();
+        } else
+            return Collections.emptyIterator();
+    }
+
 }
