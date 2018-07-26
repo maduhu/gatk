@@ -32,8 +32,8 @@ import static org.broadinstitute.hellbender.tools.walkers.readorientation.F1R2Fi
  */
 
 @CommandLineProgramProperties(
-        summary = "Collect data from a tumor bam for Mutect2 Read Orientation Filter",
-        oneLineSummary = "Data collection for Mutect2 Read Orientation Filter",
+        summary = "Collect F1R2 counts for the Mutect2 Read Orientation Filter",
+        oneLineSummary = "Collect F1R2 counts for the Mutect2 Read Orientation Filter",
         programGroup = CoverageAnalysisProgramGroup.class
 )
 
